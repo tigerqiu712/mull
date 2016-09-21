@@ -1,3 +1,5 @@
+# /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks
+
 llvm_add_library(mutang
   Compiler.cpp
   ConfigParser.cpp
@@ -19,6 +21,10 @@ llvm_add_library(mutang
   GoogleTest/GoogleTestFinder.cpp
   GoogleTest/GoogleTestRunner.cpp
 
+  XCTest/XCTest_Test.cpp
+  XCTest/XCTestFinder.cpp
+  XCTest/XCTestRunner.cpp
+
   ADDITIONAL_HEADER_DIRS
   ${MUTANG_INCLUDE_DIR}
   ${MUTANG_INCLUDE_DIR}/MutationOperators
@@ -38,6 +44,9 @@ llvm_add_library(mutang
   LLVMSupport
   LLVMTarget
   LLVMTransformUtils
+  "-framework Foundation"
+  "-framework XCTest"
+  "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
 
   # FIXME: Should not be arch specific
   LLVMX86AsmParser
@@ -46,3 +55,4 @@ llvm_add_library(mutang
   LLVMX86Desc
   LLVMX86Info
 )
+

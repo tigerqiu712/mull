@@ -15,4 +15,5 @@ public:
   std::unique_ptr<Module> createExternalLibTesteeModule();
 
   std::unique_ptr<Module> createGoogleTestTesterModule();
+  std::unique_ptr<Module> createXCTest_TesterModule();
 };

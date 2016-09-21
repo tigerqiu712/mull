@@ -18,6 +18,8 @@ add_mutang_unittest(MutangUnitTests
 
   GoogleTest/GoogleTestFinderTest.cpp
 
+  XCTest/XCTestFinderTest.cpp
+
   TestModuleFactory.cpp
   TestModuleFactory.h
 )
@@ -26,5 +28,6 @@ target_link_libraries(MutangUnitTests
   mutang
   LLVMAsmParser
   LLVMCore
+  LLVMIRReader
   LLVMSupport
 )

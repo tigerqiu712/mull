@@ -1,0 +1,3 @@
+RUN: cd %S; make clean; make PWD=%S; %mutang_driver %S/config.yaml | FileCheck %s
+
+CHECK:      TODO TODO TODO

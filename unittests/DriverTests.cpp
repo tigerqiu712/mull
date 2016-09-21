@@ -4,6 +4,8 @@
 #include "ModuleLoader.h"
 #include "SimpleTest/SimpleTestFinder.h"
 #include "SimpleTest/SimpleTestRunner.h"
+#include "XCTest/XCTestFinder.h"
+#include "XCTest/XCTestRunner.h"
 #include "TestModuleFactory.h"
 #include "TestResult.h"
 
@@ -33,9 +35,19 @@ public:
   std::unique_ptr<llvm::Module> loadModuleAtPath(const std::string &path) override {
     if (path == "foo") {
       return TestModuleFactory.createTesterModule();
-    } else if (path == "bar") {
+    }
+
+    else if (path == "bar") {
       return TestModuleFactory.createTesteeModule();
     }
+
+    else if (path == "xctest_tests") {
+      return TestModuleFactory.createXCTest_TesterModule();
+    }
+
+//    else if (path == "bar") {
+//      return TestModuleFactory.createTesteeModule();
+//    }
 
     return nullptr;
   }
@@ -77,4 +89,36 @@ TEST(Driver, SimpleTest) {
   ASSERT_EQ(ExecutionStatus::Failed, FirstMutant->getExecutionResult().Status);
 
   ASSERT_NE(nullptr, FirstMutant->getMutationPoint());
+}
+
+TEST(Driver, XCTest) {
+  std::vector<std::string> ModulePaths({ "xctest_tests" });
+  bool doFork = false;
+
+  Config Cfg(ModulePaths, doFork);
+
+  FakeModuleLoader Loader;
+  XCTestFinder TestFinder;
+  XCTestRunner Runner;
+
+  Driver Driver(Cfg, Loader, TestFinder, Runner);
+
+  /// Given the modules we use here we expect:
+  ///
+  /// 1 original test, which has Passed state
+  /// 1 mutant test, which has Failed state
+  auto Results = Driver.Run();
+  ASSERT_EQ(1u, Results.size());
+
+//  auto FirstResult = Results.begin()->get();
+//  ASSERT_EQ(ExecutionStatus::Passed, FirstResult->getOriginalTestResult().Status);
+//  ASSERT_EQ("test_count_letters", FirstResult->getTestName());
+//
+//  auto &Mutants = FirstResult->getMutationResults();
+//  ASSERT_EQ(1u, Mutants.size());
+//
+//  auto FirstMutant = Mutants.begin()->get();
+//  ASSERT_EQ(ExecutionStatus::Failed, FirstMutant->getExecutionResult().Status);
+//
+//  ASSERT_NE(nullptr, FirstMutant->getMutationPoint());
 }

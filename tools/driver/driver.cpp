@@ -9,6 +9,9 @@
 #include "GoogleTest/GoogleTestFinder.h"
 #include "GoogleTest/GoogleTestRunner.h"
 
+#include "XCTest/XCTestFinder.h"
+#include "XCTest/XCTestRunner.h"
+
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/MemoryBuffer.h"
