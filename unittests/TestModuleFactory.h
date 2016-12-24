@@ -9,6 +9,9 @@ class TestModuleFactory {
 public:
   std::string testerModulePath_IR();
   std::string testerModulePath_Bitcode();
+  std::string googleTestTester_Bitcode_Path();
+  std::string googleTestTestee_Bitcode_Path();
+
   std::unique_ptr<Module> createTesterModule();
 
   std::unique_ptr<Module> createTesteeModule();
@@ -21,6 +24,9 @@ public:
 
   std::unique_ptr<Module> create_SimpleTest_testeePathCalculation_testee();
   std::unique_ptr<Module> create_SimpleTest_testeePathCalculation_tester();
+
+  std::unique_ptr<Module> create_GoogleTest_tester();
+  std::unique_ptr<Module> create_GoogleTest_testee();
 
   std::unique_ptr<Module> createLibCTesterModule();
   std::unique_ptr<Module> createLibCTesteeModule();

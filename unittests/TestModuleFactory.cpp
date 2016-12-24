@@ -130,12 +130,43 @@ std::unique_ptr<Module> TestModuleFactory::create_SimpleTest_testeePathCalculati
   return module;
 }
 
+#pragma mark -
+
+std::unique_ptr<Module> TestModuleFactory::create_GoogleTest_tester() {
+  std::string contents = createFixture("fixture_google_test_tester.ll");
+
+  auto module = parseIR(contents.c_str());
+
+  module->setModuleIdentifier("fixture_google_test_tester.ll");
+
+  return module;
+}
+
+std::unique_ptr<Module> TestModuleFactory::create_GoogleTest_testee() {
+  std::string contents = createFixture("fixture_google_test_testee.ll");
+
+  auto module = parseIR(contents.c_str());
+
+  module->setModuleIdentifier("fixture_google_test_testee.ll");
+
+  return module;
+}
+
+#pragma mark -
+
 std::string TestModuleFactory::testerModulePath_IR() {
   return fixturePath("fixture_simple_test_tester_module.ll");
 }
 
 std::string TestModuleFactory::testerModulePath_Bitcode() {
   return fixturePath("fixture_simple_test_tester_module.bc");
+}
+
+std::string TestModuleFactory::googleTestTester_Bitcode_Path() {
+  return fixturePath("fixture_google_test_tester.bc");
+}
+std::string TestModuleFactory::googleTestTestee_Bitcode_Path() {
+  return fixturePath("fixture_google_test_testee.bc");
 }
 
 std::unique_ptr<Module> TestModuleFactory::createTesterModule() {

@@ -19,8 +19,9 @@ using namespace llvm;
 static TestModuleFactory TestModuleFactory;
 
 TEST(GoogleTestFinder, FindTest) {
-  auto ModuleWithTests       = TestModuleFactory.createGoogleTestTesterModule();
-  auto mutangModuleWithTests = make_unique<MutangModule>(std::move(ModuleWithTests), "");
+  LLVMContext context;
+  ModuleLoader loader(context);
+  auto mutangModuleWithTests = loader.loadModuleAtPath(TestModuleFactory.googleTestTester_Bitcode_Path());
 
   Context Ctx;
   Ctx.addModule(std::move(mutangModuleWithTests));
@@ -33,16 +34,14 @@ TEST(GoogleTestFinder, FindTest) {
 
   GoogleTest_Test *Test = dyn_cast<GoogleTest_Test>(tests.begin()->get());
 
-  ASSERT_EQ("Hello.world", Test->getTestName());
+  ASSERT_EQ("Hello.sup", Test->getTestName());
 }
 
-TEST(GoogleTestFinder, DISABLED_FindTestee) {
-  auto ModuleWithTests   = TestModuleFactory.createGoogleTestTesterModule();
-
-  auto ModuleWithTestees = TestModuleFactory.createGoogleTestTesteeModule();
-
-  auto mutangModuleWithTests   = make_unique<MutangModule>(std::move(ModuleWithTests), "");
-  auto mutangModuleWithTestees = make_unique<MutangModule>(std::move(ModuleWithTestees), "");
+TEST(GoogleTestFinder, FindTestee) {
+  LLVMContext context;
+  ModuleLoader loader(context);
+  auto mutangModuleWithTests = loader.loadModuleAtPath(TestModuleFactory.googleTestTester_Bitcode_Path());
+  auto mutangModuleWithTestees = loader.loadModuleAtPath(TestModuleFactory.googleTestTestee_Bitcode_Path());
 
   Context Ctx;
   Ctx.addModule(std::move(mutangModuleWithTests));
@@ -55,12 +54,33 @@ TEST(GoogleTestFinder, DISABLED_FindTestee) {
 
   auto &Test = *(Tests.begin());
 
-  std::vector<std::unique_ptr<Testee>> Testees = Finder.findTestees(Test.get(), Ctx, 4);
+  std::vector<std::unique_ptr<Testee>> allTestees = Finder.findTestees(Test.get(), Ctx, 5);
 
-  ASSERT_EQ(1U, Testees.size());
+  ASSERT_EQ(6U, allTestees.size());
 
-  Function *Testee = Testees[0]->getTesteeFunction();
-  ASSERT_FALSE(Testee->empty());
+  for (auto &testee: allTestees) {
+    printf("Hello: %s\n", testee->getTesteeFunction()->getName().str().c_str());
+  }
+
+  Testee *testee1 = allTestees[0].get();
+  Testee *testee2 = allTestees[1].get();
+  Testee *testee3 = allTestees[2].get();
+  Testee *testee4 = allTestees[3].get();
+  Testee *testee5 = allTestees[4].get();
+  Testee *testee6 = allTestees[5].get();
+
+  ASSERT_EQ(testee6->
+            getCallerTestee(), testee5);
+  ASSERT_EQ(testee5->
+            getCallerTestee(), testee4);
+  ASSERT_EQ(testee4->
+            getCallerTestee(), testee3);
+  ASSERT_EQ(testee3->
+            getCallerTestee(), testee2);
+  ASSERT_EQ(testee2->
+            getCallerTestee(), testee1);
+  ASSERT_EQ(testee1->
+            getCallerTestee(), nullptr);
 }
 
 TEST(GoogleTestFinder, DISABLED_FindMutationPoints) {
