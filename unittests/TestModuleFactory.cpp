@@ -377,3 +377,15 @@ std::unique_ptr<Module> TestModuleFactory::APFloat_019fc57b8bd190d33389137abbe71
 
   return module;
 }
+
+#pragma mark - Rust
+
+std::unique_ptr<Module> TestModuleFactory::rustModule() {
+  std::string contents = createFixture("fixture_rust.ll");
+
+  auto module = parseIR(contents.c_str());
+
+  module->setModuleIdentifier("fixture_rust.ll");
+
+  return module;
+}

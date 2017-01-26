@@ -29,6 +29,10 @@ llvm_add_library(mull
   GoogleTest/GoogleTestFinder.cpp
   GoogleTest/GoogleTestRunner.cpp
 
+  Rust/RustTest.cpp
+  Rust/RustTestFinder.cpp
+  Rust/RustTestRunner.cpp
+
   SQLiteReporter.cpp
 
   ADDITIONAL_HEADER_DIRS

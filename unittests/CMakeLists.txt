@@ -28,6 +28,8 @@ add_mull_unittest(MullUnitTests
 
   GoogleTest/GoogleTestFinderTest.cpp
 
+  Rust/RustTestFinderTest.cpp
+
   SQLiteReporterTest.cpp
 
   TestModuleFactory.cpp
