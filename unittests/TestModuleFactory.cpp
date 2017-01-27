@@ -385,7 +385,7 @@ std::unique_ptr<Module> TestModuleFactory::rustModule() {
 
   auto module = parseIR(contents.c_str());
 
-  module->setModuleIdentifier("fixture_rust.ll");
+  module->setModuleIdentifier("rust");
 
   return module;
 }

@@ -29,25 +29,6 @@
 using namespace mull;
 using namespace llvm;
 
-class GoogleTestMutationOperatorFilter : public MutationOperatorFilter {
-public:
-  bool shouldSkipInstruction(llvm::Instruction *instruction) {
-    if (instruction->hasMetadata()) {
-      int debugInfoKindID = 0;
-      MDNode *debug = instruction->getMetadata(debugInfoKindID);
-
-      DILocation *location = dyn_cast<DILocation>(debug);
-      if (location) {
-        if (location->getFilename().contains("include/c++/v1")) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  };
-};
-
 RustTestFinder::RustTestFinder() : TestFinder() {
   /// FIXME: should come from outside
   mutationOperators.emplace_back(make_unique<AddMutationOperator>());
@@ -244,16 +225,16 @@ static bool shouldSkipDefinedFunction(llvm::Function *definedFunction) {
     return true;
   }
 
-  if (definedFunction->hasMetadata()) {
-    int debugInfoKindID = 0;
-    MDNode *debug = definedFunction->getMetadata(debugInfoKindID);
-    DISubprogram *subprogram = dyn_cast<DISubprogram>(debug);
-    if (subprogram) {
-      if (subprogram->getFilename().contains("include/c++/v1")) {
-        return true;
-      }
-    }
-  }
+//  if (definedFunction->hasMetadata()) {
+//    int debugInfoKindID = 0;
+//    MDNode *debug = definedFunction->getMetadata(debugInfoKindID);
+//    DISubprogram *subprogram = dyn_cast<DISubprogram>(debug);
+//    if (subprogram) {
+//      if (subprogram->getFilename().contains("include/c++/v1")) {
+//        return true;
+//      }
+//    }
+//  }
 
   return false;
 }
@@ -401,14 +382,14 @@ RustTestFinder::findMutationPoints(const Context &context,
 
   std::vector<MutationPoint *> points;
 
-  GoogleTestMutationOperatorFilter filter;
+//  GoogleTestMutationOperatorFilter filter;
 
-  for (auto &mutationOperator : mutationOperators) {
-    for (auto point : mutationOperator->getMutationPoints(context, &testee, filter)) {
-      points.push_back(point);
-      MutationPoints.emplace_back(std::unique_ptr<MutationPoint>(point));
-    }
-  }
+//  for (auto &mutationOperator : mutationOperators) {
+//    for (auto point : mutationOperator->getMutationPoints(context, &testee, filter)) {
+//      points.push_back(point);
+//      MutationPoints.emplace_back(std::unique_ptr<MutationPoint>(point));
+//    }
+//  }
 
   MutationPointsRegistry.insert(std::make_pair(&testee, points));
   return points;

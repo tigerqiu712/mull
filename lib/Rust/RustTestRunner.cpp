@@ -17,18 +17,18 @@ using namespace mull;
 using namespace llvm;
 using namespace std::chrono;
 
-class Mull_Rust_Resolver : public JITSymbolResolver {
+class Mull_Rust_Resolver : public RuntimeDyld::SymbolResolver {
 public:
 
-  JITSymbol findSymbol(const std::string &Name) {
+  RuntimeDyld::SymbolInfo findSymbol(const std::string &Name) {
     if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-      return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+      return RuntimeDyld::SymbolInfo(SymAddr, JITSymbolFlags::Exported);
 
-    return JITSymbol(nullptr);
+    return RuntimeDyld::SymbolInfo(nullptr);
   }
 
-  JITSymbol findSymbolInLogicalDylib(const std::string &Name) {
-    return JITSymbol(nullptr);
+  RuntimeDyld::SymbolInfo findSymbolInLogicalDylib(const std::string &Name) {
+    return RuntimeDyld::SymbolInfo(nullptr);
   }
 };
 

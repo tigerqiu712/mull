@@ -6,6 +6,8 @@
 #include "MutationOperators/NegateConditionMutationOperator.h"
 #include "MutationOperators/RemoveVoidFunctionMutationOperator.h"
 #include "Result.h"
+#include "Rust/RustTestFinder.h"
+#include "Rust/RustTestRunner.h"
 #include "SimpleTest/SimpleTestFinder.h"
 #include "SimpleTest/SimpleTestRunner.h"
 #include "TestModuleFactory.h"
@@ -75,6 +77,11 @@ public:
     else if (path == "simple_test/testee_path_calculation/testee") {
       auto module = TestModuleFactory.create_SimpleTest_testeePathCalculation_testee();
       return make_unique<MullModule>(std::move(module), "simple_test/testee_path_calculation/testee");
+    }
+
+    else if (path == "rust") {
+      auto module = TestModuleFactory.rustModule();
+      return make_unique<MullModule>(std::move(module), "rust");
     }
 
     return make_unique<MullModule>(nullptr, "");
@@ -325,3 +332,54 @@ TEST(Driver, SimpleTest_TesteePathCalculation) {
   ASSERT_EQ(callerPath[3], "testee.c:15");
   ASSERT_EQ(callerPath[4], "testee.c:8");
 }
+
+TEST(Driver, Rust_AddMutationOperator) {
+  /// Create Config with fake BitcodePaths
+  /// Create Fake Module Loader
+  /// Initialize Driver using ModuleLoader and Config
+  /// Driver should initialize (make them injectable? DI?)
+  /// TestRunner and TestFinder based on the Config
+  /// Then Run all the tests using driver
+
+  std::vector<std::string> ModulePaths({ "rust" });
+  bool doFork = false;
+  bool dryRun = false;
+  bool useCache = false;
+  int distance = 10;
+  std::string cacheDirectory = "/tmp/mull_cache";
+  Config config(ModulePaths, doFork, dryRun, useCache, MullDefaultTimeout,
+                distance, cacheDirectory, {});
+
+  FakeModuleLoader loader;
+
+  std::vector<std::unique_ptr<MutationOperator>> mutationOperators;
+  mutationOperators.emplace_back(make_unique<AddMutationOperator>());
+
+  RustTestFinder testFinder;
+
+  Toolchain toolchain(config);
+  llvm::TargetMachine &machine = toolchain.targetMachine();
+  RustTestRunner runner(machine);
+
+  Driver Driver(config, loader, testFinder, runner, toolchain);
+
+  /// Given the modules we use here we expect:
+  ///
+  /// 1 original test, which has Passed state
+  /// 1 mutant test, which has Failed state
+  auto result = Driver.Run();
+//  ASSERT_EQ(1u, result->getTestResults().size());
+//
+//  auto FirstResult = result->getTestResults().begin()->get();
+//  ASSERT_EQ(ExecutionStatus::Passed, FirstResult->getOriginalTestResult().Status);
+//  ASSERT_EQ("test_count_letters", FirstResult->getTestName());
+//
+//  auto &Mutants = FirstResult->getMutationResults();
+//  ASSERT_EQ(1u, Mutants.size());
+//
+//  auto FirstMutant = Mutants.begin()->get();
+//  ASSERT_EQ(ExecutionStatus::Failed, FirstMutant->getExecutionResult().Status);
+//
+//  ASSERT_NE(nullptr, FirstMutant->getMutationPoint());
+}
+

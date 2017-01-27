@@ -1,13 +1,15 @@
 #include "Rust/RustTestFinder.h"
 
+#include "Config.h"
 #include "Context.h"
 #include "MutationOperators/AddMutationOperator.h"
 #include "MutationOperators/NegateConditionMutationOperator.h"
 #include "MutationOperators/RemoveVoidFunctionMutationOperator.h"
-
 #include "TestModuleFactory.h"
 #include "Test.h"
+#include "Toolchain/Toolchain.h"
 #include "Rust/RustTest.h"
+#include "Rust/RustTestRunner.h"
 
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/LLVMContext.h"
@@ -31,11 +33,11 @@ TEST(RustTestFinder, FindTest) {
   std::vector<std::unique_ptr<MutationOperator>> mutationOperators;
   mutationOperators.emplace_back(make_unique<AddMutationOperator>());
 
-//  RustTestFinder finder(std::move(mutationOperators));
-//
-//  auto tests = finder.findTests(Ctx);
-//
-//  ASSERT_EQ(1U, tests.size());
+  RustTestFinder finder;
+
+  auto tests = finder.findTests(Ctx);
+
+  ASSERT_EQ(0U, tests.size());
 }
 
 //TEST(RustTestFinder, FindTestee) {
