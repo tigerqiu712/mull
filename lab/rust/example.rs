@@ -4,7 +4,12 @@ pub fn sum(a: i32, b: i32) -> i32 {
 }
 
 #[test]
-fn foo_test_sum() {
+fn rusttest_foo_sum1() {
   assert!(sum(3, 4) == 7);
+}
+
+#[test]
+fn rusttest_foo_sum2() {
+  assert!(sum(4, 5) == 9);
 }
 

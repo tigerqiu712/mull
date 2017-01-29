@@ -3,21 +3,14 @@
 using namespace mull;
 using namespace std;
 
-RustTest::RustTest(std::string Name,
-                   llvm::Function *TestBody,
-                   std::vector<llvm::Function *> Ctors) :
-  Test(TK_RustTest), TestName(Name), TestBodyFunction(TestBody), GlobalCtors(Ctors)
-{
+RustTest::RustTest(std::string name, llvm::Function *function) :
+  Test(TK_RustTest), testName(name), function(function) {
 }
 
 std::string RustTest::getTestName() {
-  return TestName;
+  return testName;
 }
 
-std::vector<llvm::Function *> &RustTest::GetGlobalCtors() {
-  return GlobalCtors;
-}
-
-llvm::Function *RustTest::GetTestBodyFunction() {
-  return TestBodyFunction;
+llvm::Function *RustTest::getFunction() {
+  return function;
 }

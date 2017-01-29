@@ -21,8 +21,9 @@ class Mull_Rust_Resolver : public RuntimeDyld::SymbolResolver {
 public:
 
   RuntimeDyld::SymbolInfo findSymbol(const std::string &Name) {
-    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
+    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name)) {
       return RuntimeDyld::SymbolInfo(SymAddr, JITSymbolFlags::Exported);
+    }
 
     return RuntimeDyld::SymbolInfo(nullptr);
   }

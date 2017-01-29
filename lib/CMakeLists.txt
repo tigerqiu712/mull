@@ -40,6 +40,7 @@ llvm_add_library(mull
   ${MULL_INCLUDE_DIR}/MutationOperators
   ${MULL_INCLUDE_DIR}/Context
   ${MULL_INCLUDE_DIR}/GoogleTest
+  ${MULL_INCLUDE_DIR}/Rust
   ${MULL_INCLUDE_DIR}/SimpleTest
   ${MULL_INCLUDE_DIR}/Toolchain
 

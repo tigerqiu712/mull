@@ -72,141 +72,19 @@ RustTestFinder::RustTestFinder() : TestFinder() {
 std::vector<std::unique_ptr<Test>> RustTestFinder::findTests(Context &Ctx) {
   std::vector<std::unique_ptr<Test>> tests;
 
-  for (auto &M : Ctx.getModules()) {
-    for (auto &Global : M->getModule()->getGlobalList()) {
-      Type *Ty = Global.getValueType();
-      if (Ty->getTypeID() != Type::PointerTyID) {
-        continue;
+  for (auto &module : Ctx.getModules()) {
+    auto &x = module->getModule()->getFunctionList();
+    for (auto &Fn : x) {
+//      Logger::info() << "RustTestFinder::findTests()> found function: "
+//        << Fn.getName() << '\n';
+
+      if (Fn.getName().str().find("rusttest_") != std::string::npos) {
+        Logger::info() << "RustTestFinder::findTests - found function: "
+        << Fn.getName() << '\n';
+
+        tests.push_back(make_unique<RustTest>(Fn.getName(), &Fn));
       }
-
-      Type *globalType = Ty->getPointerElementType();
-      if (!globalType) {
-        continue;
-      }
-
-      StructType *STy = dyn_cast<StructType>(globalType);
-      if (!STy) {
-        continue;
-      }
-
-      /// If two modules contain the same type, then when second modules is loaded
-      /// the typename is changed a bit, e.g.:
-      ///
-      ///   class.testing::TestInfo     // type from first module
-      ///   class.testing::TestInfo.25  // type from second module
-      ///
-      /// Hence we cannot just compare string, and rather should
-      /// compare the beginning of the typename
-
-      if (!STy->getName().startswith(StringRef("class.testing::TestInfo"))) {
-        continue;
-      }
-
-      /// At this point the Global has only one usage
-      /// The user of the Global is part of initialization function
-      /// It looks like this:
-      ///
-      ///   store %"class.testing::TestInfo"* %call2, %"class.testing::TestInfo"** @_ZN16Hello_world_Test10test_info_E
-      ///
-      /// From here we need to extract actual user, which is a `store` instruction
-      /// The `store` instruction uses variable `%call2`, which is created
-      /// from the following code:
-      ///
-      ///   %call2 = call %"class.testing::TestInfo"* @_ZN7testing8internal23MakeAndRegisterTestInfoEPKcS2_S2_S2_PKvPFvvES6_PNS0_15TestFactoryBaseE(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.1, i32 0, i32 0), i8* null, i8* null, i8* %call, void ()* @_ZN7testing4Test13SetUpTestCaseEv, void ()* @_ZN7testing4Test16TearDownTestCaseEv, %"class.testing::internal::TestFactoryBase"* %1)
-      ///
-      /// Which can be roughly simplified to the following pseudo-code:
-      ///
-      ///   testInfo = MakeAndRegisterTestInfo("Test Suite Name",
-      ///                                      "Test Case Name",
-      ///                                      setUpFunctionPtr,
-      ///                                      tearDownFunctionPtr,
-      ///                                      some_other_ignored_parameters)
-      ///
-      /// Where `testInfo` is exactly the `%call2` from above.
-      /// From the `MakeAndRegisterTestInfo` we need to extract test suite
-      /// and test case names. Having those in place it's possible to provide
-      /// correct filter for GoogleTest framework
-      ///
-      /// Putting lots of assertions to check the hardway whether
-      /// my assumptions are correct or not
-
-      assert(Global.getNumUses() == 1 &&
-             "The Global (TestInfo) used only once during test setup");
-
-      auto StoreInstUser = *Global.users().begin();
-      assert(isa<StoreInst>(StoreInstUser) &&
-             "The Global should only be used within store instruction");
-
-      auto Store = dyn_cast<StoreInst>(StoreInstUser);
-      auto ValueOp = Store->getValueOperand();
-      assert(isa<CallInst>(ValueOp) &&
-             "Store should be using call to MakeAndRegisterTestInfo");
-
-      auto CallInstruction = dyn_cast<CallInst>(ValueOp);
-
-      /// Once we have the CallInstruction we can extract Test Suite Name and Test Case Name
-      /// To extract them we need climb to the top, i.e.:
-      ///
-      ///   i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0)
-      ///   i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str1, i32 0, i32 0)
-
-      auto TestSuiteNameConstRef = dyn_cast<ConstantExpr>(CallInstruction->getArgOperand(0));
-      assert(TestSuiteNameConstRef);
-
-      auto TestCaseNameConstRef = dyn_cast<ConstantExpr>(CallInstruction->getArgOperand(1));
-      assert(TestCaseNameConstRef);
-
-      ///   @.str = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
-      ///   @.str = private unnamed_addr constant [6 x i8] c"world\00", align 1
-
-      auto TestSuiteNameConst = dyn_cast<GlobalValue>(TestSuiteNameConstRef->getOperand(0));
-      assert(TestSuiteNameConst);
-
-      auto TestCaseNameConst = dyn_cast<GlobalValue>(TestCaseNameConstRef->getOperand(0));
-      assert(TestCaseNameConst);
-
-      ///   [6 x i8] c"Hello\00"
-      ///   [6 x i8] c"world\00"
-
-      auto TestSuiteNameConstArray = dyn_cast<ConstantDataArray>(TestSuiteNameConst->getOperand(0));
-      assert(TestSuiteNameConstArray);
-
-      auto TestCaseNameConstArray = dyn_cast<ConstantDataArray>(TestCaseNameConst->getOperand(0));
-      assert(TestCaseNameConstArray);
-
-      ///   "Hello"
-      ///   "world"
-
-      auto TestSuiteName = TestSuiteNameConstArray->getRawDataValues().rtrim('\0');
-      auto TestCaseName = TestCaseNameConstArray->getRawDataValues().rtrim('\0');
-
-      /// Once we've got the Name of a Test Suite and the name of a Test Case
-      /// We can construct the name of a Test
-      auto TestName = TestSuiteName + "." + TestCaseName;
-
-      /// And the part of Test Body function name
-
-      auto TestBodyFunctionName = TestSuiteName + "_" + TestCaseName + "_Test8TestBodyEv";
-
-      /// Using the TestBodyFunctionName we could find the function
-      /// and finish creating the RustTest object
-
-      Function *TestBodyFunction = nullptr;
-      for (auto &Func : M->getModule()->getFunctionList()) {
-        auto foundPosition = Func.getName().rfind(StringRef(TestBodyFunctionName.str()));
-        if (foundPosition != StringRef::npos) {
-          TestBodyFunction = &Func;
-          break;
-        }
-      }
-
-      assert(TestBodyFunction && "Cannot find the TestBody function for the Test");
-
-      tests.emplace_back(make_unique<RustTest>(TestName.str(),
-                                               TestBodyFunction,
-                                               Ctx.getStaticConstructors()));
     }
-
   }
 
   return tests;
@@ -245,7 +123,7 @@ RustTestFinder::findTestees(Test *Test,
                               int maxDistance) {
   RustTest *googleTest = dyn_cast<RustTest>(Test);
 
-  Function *testFunction = googleTest->GetTestBodyFunction();
+  Function *testFunction = googleTest->getFunction();
 
   std::vector<std::unique_ptr<Testee>> testees;
 
@@ -265,17 +143,7 @@ RustTestFinder::findTestees(Test *Test,
     Function *traverseeFunction = traversee->getTesteeFunction();
     const int mutationDistance = traversee->getDistance();
 
-    /// If the function we are processing is in the same translation unit
-    /// as the test itself, then we are not looking for mutation points
-    /// in this function assuming it to be a helper function.
-    /// The only exception is the test function itself that is especially
-    /// important for path calculations that are done later in SQLiteReporter.
-    if (traverseeFunction->getParent() != testBodyModule ||
-        traverseeFunction == testFunction) {
-      testees.push_back(std::move(traversee));
-    } else {
-      continue;
-    }
+    testees.push_back(std::move(traversee));
 
     /// The function reached the max allowed distance
     /// Hence we don't go deeper

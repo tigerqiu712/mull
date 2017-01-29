@@ -13,23 +13,20 @@ class Function;
 namespace mull {
 
 class RustTest : public Test {
-  std::string TestName;
-  llvm::Function *TestBodyFunction;
-  std::vector<llvm::Function *> GlobalCtors;
+  std::string testName;
+  llvm::Function *function;
 public:
-  RustTest(std::string Name,
-           llvm::Function *TestBody,
-           std::vector<llvm::Function *> Ctors);
+  RustTest(std::string name, llvm::Function *function);
 
   std::string getTestName() override;
 
   std::string getUniqueIdentifier() override { return getTestName(); };
 
   std::vector<llvm::Function *> &GetGlobalCtors();
-  llvm::Function *GetTestBodyFunction();
+  llvm::Function *getFunction();
 
   static bool classof(const Test *T) {
-    return T->getKind() == TK_GoogleTest;
+    return T->getKind() == TK_RustTest;
   }
 };
 

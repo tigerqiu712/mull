@@ -37,37 +37,30 @@ TEST(RustTestFinder, FindTest) {
 
   auto tests = finder.findTests(Ctx);
 
-  ASSERT_EQ(0U, tests.size());
+  ASSERT_EQ(2U, tests.size());
 }
 
-//TEST(RustTestFinder, FindTestee) {
-//  auto ModuleWithTests = TestModuleFactory.createTesterModule();
-//  auto ModuleWithTestees = TestModuleFactory.createTesteeModule();
-//
-//  auto mullModuleWithTests = make_unique<MullModule>(std::move(ModuleWithTests), "");
-//  auto mullModuleWithTestees = make_unique<MullModule>(std::move(ModuleWithTestees), "");
-//
-//  Context Ctx;
-//  Ctx.addModule(std::move(mullModuleWithTests));
-//  Ctx.addModule(std::move(mullModuleWithTestees));
-//
-//  std::vector<std::unique_ptr<MutationOperator>> mutationOperators;
-//  mutationOperators.emplace_back(make_unique<AddMutationOperator>());
-//
-//  RustTestFinder Finder(std::move(mutationOperators));
-//
-//  auto Tests = Finder.findTests(Ctx);
-//
-//  auto &Test = *(Tests.begin());
-//
-//  std::vector<std::unique_ptr<Testee>> Testees = Finder.findTestees(Test.get(), Ctx, 4);
-//
-//  ASSERT_EQ(2U, Testees.size());
-//
+TEST(RustTestFinder, FindTestee) {
+  auto rustModule = TestModuleFactory.rustModule();
+  auto mullRustModule = make_unique<MullModule>(std::move(rustModule), "");
+
+  Context Ctx;
+  Ctx.addModule(std::move(mullRustModule));
+
+  RustTestFinder Finder;
+
+  auto Tests = Finder.findTests(Ctx);
+
+  auto &Test = *(Tests.begin());
+
+  std::vector<std::unique_ptr<Testee>> Testees = Finder.findTestees(Test.get(), Ctx, 4);
+
+  ASSERT_EQ(3U, Testees.size());
+
 //  Function *Testee = Testees[1]->getTesteeFunction();
 //  ASSERT_FALSE(Testee->empty());
-//}
-//
+}
+
 //TEST(RustTestFinder, FindMutationPoints_AddMutationOperator) {
 //  auto ModuleWithTests   = TestModuleFactory.createTesterModule();
 //  auto ModuleWithTestees = TestModuleFactory.createTesteeModule();
