@@ -110,6 +110,20 @@ mull::ForkProcessSandbox::run(std::function<void (ExecutionResult *)> function,
         result.Status = Crashed;
         *sharedResult = result;
       }
+
+      else if (WIFEXITED(status)) {
+        int exitStatus = WEXITSTATUS(status);
+
+        if (exitStatus == 101) {
+          auto elapsed = high_resolution_clock::now() - start;
+
+          ExecutionResult result;
+          result.RunningTime = duration_cast<std::chrono::milliseconds>(elapsed).count();
+          result.Status = RustTestsFailed;
+          *sharedResult = result;
+        }
+      }
+
     } else {
       llvm_unreachable("Should not reach!");
     }

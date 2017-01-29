@@ -22,7 +22,11 @@ enum ExecutionStatus {
   Passed,
   Timedout,
   Crashed,
-  DryRun
+  DryRun,
+
+  // Rust test's suite exits the process with 101 exit code when
+  // at least one test fails.
+  RustTestsFailed
 };
 
 struct ExecutionResult {

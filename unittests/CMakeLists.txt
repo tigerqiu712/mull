@@ -29,6 +29,7 @@ add_mull_unittest(MullUnitTests
   GoogleTest/GoogleTestFinderTest.cpp
 
   Rust/RustTestFinderTest.cpp
+  Rust/RustTestRunnerTest.cpp
 
   SQLiteReporterTest.cpp
 

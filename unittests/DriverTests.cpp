@@ -333,7 +333,8 @@ TEST(Driver, SimpleTest_TesteePathCalculation) {
   ASSERT_EQ(callerPath[4], "testee.c:8");
 }
 
-TEST(Driver, Rust_AddMutationOperator) {
+TEST(Driver, DISABLED_Rust_AddMutationOperator) {
+
   /// Create Config with fake BitcodePaths
   /// Create Fake Module Loader
   /// Initialize Driver using ModuleLoader and Config
@@ -368,10 +369,11 @@ TEST(Driver, Rust_AddMutationOperator) {
   /// 1 original test, which has Passed state
   /// 1 mutant test, which has Failed state
   auto result = Driver.Run();
-//  ASSERT_EQ(1u, result->getTestResults().size());
-//
-//  auto FirstResult = result->getTestResults().begin()->get();
-//  ASSERT_EQ(ExecutionStatus::Passed, FirstResult->getOriginalTestResult().Status);
+  ASSERT_EQ(2U, result->getTestResults().size());
+
+  auto FirstResult = result->getTestResults().begin()->get();
+  ASSERT_EQ(ExecutionStatus::Passed, FirstResult->getOriginalTestResult().Status);
+
 //  ASSERT_EQ("test_count_letters", FirstResult->getTestName());
 //
 //  auto &Mutants = FirstResult->getMutationResults();

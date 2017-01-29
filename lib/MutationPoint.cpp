@@ -52,9 +52,15 @@ void MutationPoint::applyMutation(llvm::Module *M) {
   mutationOperator->applyMutation(M, Address, *OriginalValue);
 }
 
-llvm::object::OwningBinary<llvm::object::ObjectFile> MutationPoint::applyMutation(Compiler &compiler) {
+llvm::object::OwningBinary<llvm::object::ObjectFile>
+MutationPoint::applyMutation(Compiler &compiler) {
+  printf("MutationPoint::applyMutation begin\n");
+
   auto copyForMutation = CloneModule(module->getModule());
   mutationOperator->applyMutation(copyForMutation.get(), Address, *OriginalValue);
+
+  printf("MutationPoint::applyMutation end\n");
+
   return compiler.compileModule(copyForMutation.get());
 }
 

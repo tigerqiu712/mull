@@ -29,11 +29,31 @@
 using namespace mull;
 using namespace llvm;
 
+class RustTestMutationOperatorFilter : public MutationOperatorFilter {
+public:
+  bool shouldSkipInstruction(llvm::Instruction *instruction) {
+//    if (instruction->hasMetadata()) {
+//      int debugInfoKindID = 0;
+//      MDNode *debug = instruction->getMetadata(debugInfoKindID);
+//
+//      DILocation *location = dyn_cast<DILocation>(debug);
+//      if (location) {
+//        if (location->getFilename().str().find("include/c++/v1") != std::string::npos) {
+//          return true;
+//        }
+//      }
+//    }
+
+    return false;
+  };
+};
+
+
 RustTestFinder::RustTestFinder() : TestFinder() {
   /// FIXME: should come from outside
   mutationOperators.emplace_back(make_unique<AddMutationOperator>());
-  mutationOperators.emplace_back(make_unique<NegateConditionMutationOperator>());
-  mutationOperators.emplace_back(make_unique<RemoveVoidFunctionMutationOperator>());
+//  mutationOperators.emplace_back(make_unique<NegateConditionMutationOperator>());
+//  mutationOperators.emplace_back(make_unique<RemoveVoidFunctionMutationOperator>());
 }
 
 /// The algorithm is the following:
@@ -75,11 +95,11 @@ std::vector<std::unique_ptr<Test>> RustTestFinder::findTests(Context &Ctx) {
   for (auto &module : Ctx.getModules()) {
     auto &x = module->getModule()->getFunctionList();
     for (auto &Fn : x) {
-//      Logger::info() << "RustTestFinder::findTests()> found function: "
-//        << Fn.getName() << '\n';
+      //Logger::info() << "RustTestFinder::findTests()> found function: "
+      //  << Fn.getName() << '\n';
 
       if (Fn.getName().str().find("rusttest_") != std::string::npos) {
-        Logger::info() << "RustTestFinder::findTests - found function: "
+        Logger::info() << "RustTestFinder::findTests - found test: "
         << Fn.getName() << '\n';
 
         tests.push_back(make_unique<RustTest>(Fn.getName(), &Fn));
@@ -91,28 +111,10 @@ std::vector<std::unique_ptr<Test>> RustTestFinder::findTests(Context &Ctx) {
 }
 
 static bool shouldSkipDefinedFunction(llvm::Function *definedFunction) {
-  if (definedFunction->getName().find(StringRef("testing8internal")) != StringRef::npos) {
+  // _ZN3std9panicking11begin_panic17h6c6bf73f39cdbdacE
+  if (definedFunction->getName().find(StringRef("begin_panic")) != StringRef::npos) {
     return true;
   }
-
-  if (definedFunction->getName().find(StringRef("testing15AssertionResult")) != StringRef::npos) {
-    return true;
-  }
-
-  if (definedFunction->getName().find(StringRef("testing7Message")) != StringRef::npos) {
-    return true;
-  }
-
-//  if (definedFunction->hasMetadata()) {
-//    int debugInfoKindID = 0;
-//    MDNode *debug = definedFunction->getMetadata(debugInfoKindID);
-//    DISubprogram *subprogram = dyn_cast<DISubprogram>(debug);
-//    if (subprogram) {
-//      if (subprogram->getFilename().contains("include/c++/v1")) {
-//        return true;
-//      }
-//    }
-//  }
 
   return false;
 }
@@ -250,14 +252,14 @@ RustTestFinder::findMutationPoints(const Context &context,
 
   std::vector<MutationPoint *> points;
 
-//  GoogleTestMutationOperatorFilter filter;
+  RustTestMutationOperatorFilter filter;
 
-//  for (auto &mutationOperator : mutationOperators) {
-//    for (auto point : mutationOperator->getMutationPoints(context, &testee, filter)) {
-//      points.push_back(point);
-//      MutationPoints.emplace_back(std::unique_ptr<MutationPoint>(point));
-//    }
-//  }
+  for (auto &mutationOperator : mutationOperators) {
+    for (auto point : mutationOperator->getMutationPoints(context, &testee, filter)) {
+      points.push_back(point);
+      MutationPoints.emplace_back(std::unique_ptr<MutationPoint>(point));
+    }
+  }
 
   MutationPointsRegistry.insert(std::make_pair(&testee, points));
   return points;

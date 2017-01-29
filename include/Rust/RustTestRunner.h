@@ -18,13 +18,14 @@ class Module;
 namespace mull {
 
   class RustTestRunner : public TestRunner {
-  llvm::orc::ObjectLinkingLayer<> ObjectLayer;
+  llvm::orc::ObjectLinkingLayer<> objectLayer;
 public:
 
   RustTestRunner(llvm::TargetMachine &machine);
-  ExecutionResult runTest(Test *Test, ObjectFiles &ObjectFiles) override;
+  ExecutionResult runTest(Test *Test, ObjectFiles &objectFiles) override;
 
 private:
+    void *FunctionPointer(const char *functionName);
 
 };
 

@@ -37,7 +37,7 @@ TEST(RustTestFinder, FindTest) {
 
   auto tests = finder.findTests(Ctx);
 
-  ASSERT_EQ(2U, tests.size());
+  ASSERT_EQ(4U, tests.size());
 }
 
 TEST(RustTestFinder, FindTestee) {
@@ -55,7 +55,7 @@ TEST(RustTestFinder, FindTestee) {
 
   std::vector<std::unique_ptr<Testee>> Testees = Finder.findTestees(Test.get(), Ctx, 4);
 
-  ASSERT_EQ(3U, Testees.size());
+  ASSERT_EQ(2U, Testees.size());
 
 //  Function *Testee = Testees[1]->getTesteeFunction();
 //  ASSERT_FALSE(Testee->empty());
