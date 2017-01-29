@@ -19,6 +19,8 @@ public:
   TestRunner(llvm::TargetMachine &targetMachine);
 
   virtual ExecutionResult runTest(Test *Test, ObjectFiles &ObjectFiles) = 0;
+  virtual ExecutionResult runTest(Test *test, ObjectFiles &objectFiles,
+                                  std::vector<llvm::Function *> globalConstructors) = 0;
 
   virtual ~TestRunner() {}
 };

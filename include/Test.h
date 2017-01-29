@@ -2,6 +2,10 @@
 
 #include <string>
 
+namespace llvm {
+  class Function;
+}
+
 namespace mull {
 
 class Test {
@@ -16,6 +20,8 @@ public:
   };
   TestKind getKind() const { return Kind; }
   Test(TestKind K) : Kind(K) {}
+
+  virtual llvm::Function *getFunction() { return nullptr; }
 private:
   const TestKind Kind;
 };

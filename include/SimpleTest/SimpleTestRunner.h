@@ -21,7 +21,9 @@ class SimpleTestRunner : public TestRunner {
   llvm::Mangler Mangler;
 public:
   SimpleTestRunner(llvm::TargetMachine &targetMachine);
-  ExecutionResult runTest(Test *Test, TestRunner::ObjectFiles &ObjectFiles) override;
+  ExecutionResult runTest(Test *test, TestRunner::ObjectFiles &objectFiles) override;
+  ExecutionResult runTest(Test *test, ObjectFiles &objectFiles,
+                          std::vector<llvm::Function *> globalConstructors) override;
 
 private:
   std::string MangleName(const llvm::StringRef &Name);

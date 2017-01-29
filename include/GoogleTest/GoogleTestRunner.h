@@ -8,6 +8,8 @@
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Target/TargetMachine.h"
 
+#include <vector>
+
 namespace llvm {
 
 class Function;
@@ -23,7 +25,10 @@ namespace mull {
 public:
 
   GoogleTestRunner(llvm::TargetMachine &machine);
-  ExecutionResult runTest(Test *Test, ObjectFiles &ObjectFiles) override;
+  ExecutionResult runTest(Test *test, ObjectFiles &objectFiles) override;
+  ExecutionResult runTest(Test *test,
+                          ObjectFiles &objectFiles,
+                          std::vector<llvm::Function *> globalConstructors) override;
 
 private:
   std::string MangleName(const llvm::StringRef &Name);

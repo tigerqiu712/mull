@@ -94,3 +94,10 @@ ExecutionResult SimpleTestRunner::runTest(Test *Test, ObjectFiles &ObjectFiles) 
 
   return Result;
 }
+
+ExecutionResult SimpleTestRunner::runTest(Test *test,
+                        ObjectFiles &objectFiles,
+                        std::vector<llvm::Function *> globalConstructors) {
+  ExecutionResult result;
+  return result;
+}

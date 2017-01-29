@@ -7,6 +7,11 @@ using namespace llvm;
 using namespace std;
 
 /// FIXME: put into some proper place
+
+/// Takes a name from a module identifier, i.e.:
+/// home/user/build/hello_world.c.bc
+/// will be converted into 'hello_world'
+/// The identifier is needed to preserve a compiled module locally
 static string fileNameFromPath(const string &path) {
   std::string filename;
   auto lastSeparatorPos = path.rfind("/");

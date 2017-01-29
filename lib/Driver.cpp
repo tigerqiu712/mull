@@ -7,7 +7,9 @@
 #include "Result.h"
 #include "TestResult.h"
 
+#include "llvm/IR/CallSite.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Verifier.h"
@@ -25,6 +27,8 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <map>
+#include <set>
 #include <vector>
 
 using namespace llvm;
@@ -32,6 +36,79 @@ using namespace llvm::object;
 using namespace mull;
 using namespace std;
 using namespace std::chrono;
+
+struct CallTree {
+  int depth;
+  Function *function;
+  vector<unique_ptr<CallTree>> children;
+
+  set<Module *> uniqueModules() {
+    set<Module *> modules;
+    return uniqueModules(modules);
+  }
+
+  set<Module *> uniqueModules(set<Module *> modules) {
+    modules.insert(function->getParent());
+    for (auto &ct : children) {
+      modules = ct->uniqueModules(modules);
+    }
+    return modules;
+  }
+};
+
+static set<Function *> functions;
+
+static unique_ptr<CallTree> callTreeForFunction(Context &context, Function *function, int depth) {
+  functions.insert(function);
+
+  auto callTree = make_unique<CallTree>();
+  callTree->depth = depth;
+  callTree->function = function;
+
+  Module *currentModule = function->getParent();
+
+  for (inst_iterator I = inst_begin(function), E = inst_end(function); I != E; ++I) {
+    CallSite cs(&*I);
+    if (!cs.isCall() && !cs.isInvoke()) {
+      continue;
+    }
+
+    Function *callee = dyn_cast<Function>(cs.getCalledValue());
+    if (!callee) {
+      continue;
+    }
+
+    if (callee->isDeclaration()) {
+      callee = currentModule->getFunction(callee->getName());
+      if (callee->isDeclaration()) {
+        callee = context.lookupDefinedFunction(callee->getName());
+        if (!callee) {
+          continue;
+        }
+      }
+    }
+
+    if (functions.find(callee) != functions.end()) {
+      continue;
+    }
+
+    callTree->children.emplace_back(callTreeForFunction(context, callee, depth + 1));
+  }
+
+  return callTree;
+}
+
+static void dumpCallTree(CallTree *callTree) {
+  Logger::debug().indent(callTree->depth * 2)
+    << callTree->function->getName() << "\n";
+  Logger::debug().indent(callTree->depth * 2)
+    << callTree->function->getParent()->getModuleIdentifier() << "\n";
+  for (auto &ct : callTree->children) {
+    dumpCallTree(ct.get());
+  }
+
+  Logger::debug() << "\n";
+}
 
 /// Populate mull::Context with modules using
 /// ModulePaths from mull::Config.
@@ -64,18 +141,7 @@ std::unique_ptr<Result> Driver::Run() {
   /// Later on modules used only for generating of mutants
   for (auto ModulePath : Cfg.getBitcodePaths()) {
     unique_ptr<MullModule> ownedModule = Loader.loadModuleAtPath(ModulePath);
-    MullModule &module = *ownedModule.get();
     assert(ownedModule && "Can't load module");
-
-    ObjectFile *objectFile = toolchain.cache().getObject(module);
-
-    if (objectFile == nullptr) {
-      auto owningObjectFile = toolchain.compiler().compileModule(*module.clone().get());
-      objectFile = owningObjectFile.getBinary();
-      toolchain.cache().putObject(std::move(owningObjectFile), *ownedModule.get());
-    }
-
-    InnerCache.insert(std::make_pair(module.getModule(), objectFile));
     Ctx.addModule(std::move(ownedModule));
   }
 
@@ -85,6 +151,53 @@ std::unique_ptr<Result> Driver::Run() {
   Logger::debug() << "Driver::Run> found "
                   << testsCount
                   << " tests\n";
+
+  vector<unique_ptr<CallTree>> callTrees;
+
+  for (auto &test : foundTests) {
+    Function *function = test->getFunction();
+    callTrees.emplace_back(callTreeForFunction(Ctx, function, 0));
+  }
+
+  Function *testDriver = Ctx.lookupDefinedFunction("_ZN7testing14InitGoogleTestEPiPPc");
+  callTrees.emplace_back(callTreeForFunction(Ctx, testDriver, 0));
+
+  Function *errorHack = Ctx.lookupDefinedFunction("_ZN4llvm13ErrorInfoBase6anchorEv");
+  callTrees.emplace_back(callTreeForFunction(Ctx, errorHack, 0));
+
+  Function *cliHack = Ctx.lookupDefinedFunction("_ZN4llvm2cl6parserIjE5parseERNS0_6OptionENS_9StringRefES5_Rj");
+  callTrees.emplace_back(callTreeForFunction(Ctx, cliHack, 0));
+
+//  Logger::debug() << "\n\n";
+//  for (auto &callTree : callTrees) {
+//    dumpCallTree(callTree.get());
+//  }
+
+  set<Module *> allModules;
+  for (auto &callTree : callTrees) {
+//    printf("%lu\n", callTree->uniqueModules().size());
+    auto modules = callTree->uniqueModules();
+    allModules.insert(modules.begin(), modules.end());
+  }
+
+  printf("%lu\n", allModules.size());
+
+  for (auto module : allModules) {
+    MullModule *mullModule = Ctx.mullModuleForLLVMModule(module);
+    ObjectFile *objectFile = toolchain.cache().getObject(*mullModule);
+
+    if (objectFile == nullptr) {
+      auto owningObjectFile = toolchain.compiler().compileModule(*mullModule->clone().get());
+      objectFile = owningObjectFile.getBinary();
+      toolchain.cache().putObject(std::move(owningObjectFile), *mullModule);
+    }
+
+    InnerCache.insert(std::make_pair(module, objectFile));
+  }
+
+  auto constructors = Ctx.getStaticConstructors(allModules);
+
+//  exit(42);
 
   int testIndex = 1;
   for (auto &test : foundTests) {
@@ -97,7 +210,7 @@ std::unique_ptr<Result> Driver::Run() {
       << "\n";
 
     ExecutionResult ExecResult = Sandbox->run([&](ExecutionResult *SharedResult) {
-      *SharedResult = Runner.runTest(test.get(), ObjectFiles);
+      *SharedResult = Runner.runTest(test.get(), ObjectFiles, constructors);
     }, Cfg.getTimeout());
 
     auto BorrowedTest = test.get();
@@ -158,12 +271,12 @@ std::unique_ptr<Result> Driver::Run() {
           ObjectFiles.push_back(mutant);
 
           result = Sandbox->run([&](ExecutionResult *SharedResult) {
-            ExecutionResult R = Runner.runTest(BorrowedTest, ObjectFiles);
+            ExecutionResult R = Runner.runTest(BorrowedTest, ObjectFiles, constructors);
 
             assert(R.Status != ExecutionStatus::Invalid && "Expect to see valid TestResult");
 
             *SharedResult = R;
-          }, ExecResult.RunningTime * 10);
+          }, ExecResult.RunningTime * 100);
           ObjectFiles.pop_back();
 
           assert(result.Status != ExecutionStatus::Invalid && "Expect to see valid TestResult");

@@ -10,6 +10,8 @@
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/TargetSelect.h"
 
+#include "Logger.h"
+
 #include <chrono>
 #include <execinfo.h>
 
@@ -98,8 +100,9 @@ public:
       return findSymbol("mull__dso_handle");
     }
 
-    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
+    if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name)) {
       return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+    }
     return JITSymbol(nullptr);
   }
 
@@ -138,6 +141,70 @@ void GoogleTestRunner::runStaticCtor(llvm::Function *Ctor) {
 
   auto ctor = ((int (*)())(intptr_t)CtorPointer);
   ctor();
+}
+
+ExecutionResult GoogleTestRunner::runTest(Test *test,
+                                          ObjectFiles &objectFiles,
+                                          std::vector<Function *> globalConstructors) {
+  GoogleTest_Test *googleTest = dyn_cast<GoogleTest_Test>(test);
+
+  auto Handle = ObjectLayer.addObjectSet(objectFiles,
+                                         make_unique<SectionMemoryManager>(),
+                                         make_unique<Mull_GoogleTest_Resolver>());
+
+  auto start = high_resolution_clock::now();
+
+  for (auto &constructor: globalConstructors) {
+    runStaticCtor(constructor);
+  }
+
+  std::string filter = "--gtest_filter=" + googleTest->getTestName();
+  const char *argv[] = { "mull", filter.c_str(), NULL };
+  int argc = 2;
+
+  /// Normally Google Test Driver looks like this:
+  ///
+  ///   int main(int argc, char **argv) {
+  ///     InitGoogleTest(&argc, argv);
+  ///     return UnitTest.GetInstance()->Run();
+  ///   }
+  ///
+  /// Technically we can just call `main` function, but there is a problem:
+  /// Among all the files that are being processed may be more than one
+  /// `main` function, therefore we can call wrong driver.
+  ///
+  /// To avoid this from happening we implement the driver function on our own.
+  /// We must keep in mind that each project can have its own, extended
+  /// version of the driver (LLVM itself has one).
+  ///
+
+  void *initGTestPtr = FunctionPointer("__ZN7testing14InitGoogleTestEPiPPc");
+  auto initGTest = ((void (*)(int *, const char**))(intptr_t)initGTestPtr);
+  initGTest(&argc, argv);
+
+  void *getInstancePtr = FunctionPointer("__ZN7testing8UnitTest11GetInstanceEv");
+  auto getInstance = ((UnitTest *(*)())(intptr_t)getInstancePtr);
+  UnitTest *unitTest = getInstance();
+
+  void *runAllTestsPtr = FunctionPointer("__ZN7testing8UnitTest3RunEv");
+  auto runAllTests = ((int (*)(UnitTest *))(intptr_t)runAllTestsPtr);
+  uint64_t result = runAllTests(unitTest);
+
+  runDestructors();
+  auto elapsed = high_resolution_clock::now() - start;
+
+  ExecutionResult Result;
+  Result.RunningTime = duration_cast<std::chrono::milliseconds>(elapsed).count();
+
+  ObjectLayer.removeObjectSet(Handle);
+
+  if (result == 0) {
+    Result.Status = ExecutionStatus::Passed;
+  } else {
+    Result.Status = ExecutionStatus::Failed;
+  }
+  
+  return Result;
 }
 
 ExecutionResult GoogleTestRunner::runTest(Test *Test, ObjectFiles &ObjectFiles) {

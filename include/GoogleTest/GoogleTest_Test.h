@@ -31,6 +31,8 @@ public:
   static bool classof(const Test *T) {
     return T->getKind() == TK_GoogleTest;
   }
+
+  llvm::Function *getFunction() override { return GetTestBodyFunction(); }
 };
 
 }

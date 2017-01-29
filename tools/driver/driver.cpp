@@ -100,6 +100,8 @@ int main(int argc, char *argv[]) {
     return debug_main();
   }
 
+  Logger::setLevel(Logger::Level::error);
+
   ConfigParser Parser;
   auto config = Parser.loadConfig(ConfigFile.c_str());
 
