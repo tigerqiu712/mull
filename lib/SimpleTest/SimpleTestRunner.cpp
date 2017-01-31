@@ -3,6 +3,8 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/OrcMCJITReplacement.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
+
+/// TODO: enable back for LLVM 4.0
 //#include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
