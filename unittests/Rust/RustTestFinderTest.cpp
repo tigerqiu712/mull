@@ -37,6 +37,8 @@ TEST(RustTestFinder, FindTest) {
 
   auto tests = finder.findTests(Ctx);
 
+  abort();
+
   ASSERT_EQ(4U, tests.size());
 }
 

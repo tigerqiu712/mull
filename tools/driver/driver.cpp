@@ -13,8 +13,8 @@
 #include "SimpleTest/SimpleTestFinder.h"
 #include "SimpleTest/SimpleTestRunner.h"
 
-#include "GoogleTest/GoogleTestFinder.h"
-#include "GoogleTest/GoogleTestRunner.h"
+#include "Rust/RustTestFinder.h"
+#include "Rust/RustTestRunner.h"
 
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -76,9 +76,9 @@ int debug_main() {
   
   auto mutationOperators = Driver::mutationOperators(config.getMutationOperators());
   
-  GoogleTestFinder TestFinder(std::move(mutationOperators));
+  RustTestFinder TestFinder;
   Toolchain toolchain(config);
-  GoogleTestRunner Runner(toolchain.targetMachine());
+  RustTestRunner Runner(toolchain.targetMachine());
 
   Driver D(config, Loader, TestFinder, Runner, toolchain);
 
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
 
 #if 1
   auto mutationOperators = Driver::mutationOperators(config.getMutationOperators());
-  GoogleTestFinder TestFinder(std::move(mutationOperators));
-  GoogleTestRunner Runner(toolchain.targetMachine());
+  RustTestFinder TestFinder;
+  RustTestRunner Runner(toolchain.targetMachine());
 #else
   SimpleTestFinder TestFinder;
   SimpleTestRunner Runner(toolchain.targetMachine());
