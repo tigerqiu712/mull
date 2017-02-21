@@ -7,6 +7,7 @@
 #include "Result.h"
 #include "TestResult.h"
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
@@ -50,6 +51,70 @@ using namespace std::chrono;
 /// Each result contains result of execution of an original test and
 /// all the results of each mutant within corresponding MutationPoint
 
+static void patchModule(llvm::Module *module, ModuleLoader &loader) {
+//  module->dump();
+
+  //  rustModule->getFunctionList()->
+  Function *mainFunction = module->getFunction("main");
+
+//  mainFunction->dump();
+
+  for (auto &bb : *mainFunction) {
+    for (auto &instruction : bb) {
+      CallInst *callInst = dyn_cast<CallInst>(&instruction);
+
+      if (callInst == nullptr) {
+        continue;
+      }
+
+      Function *calledFunction = callInst->getCalledFunction();
+
+      if (calledFunction == nullptr) {
+        continue;
+      }
+
+      StringRef cfName = calledFunction->getName();
+
+//      callInst->dump();
+      printf("---- %s\n", cfName.str().c_str());
+
+      assert(callInst->getNumArgOperands() == 3);
+
+      auto testMainFunctionPointer = callInst->getOperand(0);
+      assert(testMainFunctionPointer->getType()->getTypeID() == llvm::Type::PointerTyID);
+
+      auto testMainFunctionPointerAsExpr =
+      dyn_cast<ConstantExpr>(testMainFunctionPointer);
+      assert(testMainFunctionPointerAsExpr);
+
+      __unused auto testMainFunction =
+      testMainFunctionPointerAsExpr->getOperand(0);
+      assert(testMainFunction);
+
+      llvm::IRBuilder<> builder(loader.getContext());
+
+      // Make the function type:  double(double,double) etc.
+      FunctionType *FT = FunctionType::get(Type::getVoidTy(loader.getContext()),
+                                           {}, false);
+
+      Function *F = Function::Create(FT,
+                                     Function::InternalLinkage,
+                                     "damp",
+                                     module);
+
+      llvm::BasicBlock *entry = llvm::BasicBlock::Create(loader.getContext(), "", F);
+      builder.SetInsertPoint(entry);
+      builder.CreateRetVoid();
+
+//      module->dump();
+
+//      testMainFunctionPointerAsExpr->setOperand(0, F);
+    }
+  }
+
+//  abort();
+}
+
 std::unique_ptr<Result> Driver::Run() {
   std::vector<std::unique_ptr<TestResult>> Results;
   std::vector<std::unique_ptr<Testee>> allTestees;
@@ -60,6 +125,11 @@ std::unique_ptr<Result> Driver::Run() {
   for (auto ModulePath : Cfg.getBitcodePaths()) {
     unique_ptr<MullModule> ownedModule = Loader.loadModuleAtPath(ModulePath);
     MullModule &module = *ownedModule.get();
+
+    llvm::Module *rustModule = module.getModule();
+
+    patchModule(rustModule, Loader);
+
     assert(ownedModule && "Can't load module");
 
     ObjectFile *objectFile = toolchain.cache().getObject(module);
@@ -73,6 +143,8 @@ std::unique_ptr<Result> Driver::Run() {
     InnerCache.insert(std::make_pair(module.getModule(), objectFile));
     Ctx.addModule(std::move(ownedModule));
   }
+
+//  abort();
 
   auto foundTests = Finder.findTests(Ctx);
   const int testsCount = foundTests.size();

@@ -32,6 +32,22 @@ using namespace llvm;
 class RustTestMutationOperatorFilter : public MutationOperatorFilter {
 public:
   bool shouldSkipInstruction(llvm::Instruction *instruction) {
+    if (instruction->hasMetadata()) {
+      int debugInfoKindID = 0;
+      MDNode *debug = instruction->getMetadata(debugInfoKindID);
+
+      DILocation *location = dyn_cast<DILocation>(debug);
+      if (location) {
+        if (location->getFilename().str().find("buildbot") != std::string::npos) {
+          printf("Skipping buildbot stuff\n");
+
+          return true;
+        }
+      }
+    } else {
+      return true;
+    }
+
     return false;
   };
 };
@@ -40,8 +56,8 @@ public:
 RustTestFinder::RustTestFinder() : TestFinder() {
   /// FIXME: should come from outside
   mutationOperators.emplace_back(make_unique<AddMutationOperator>());
-  mutationOperators.emplace_back(make_unique<NegateConditionMutationOperator>());
-  mutationOperators.emplace_back(make_unique<RemoveVoidFunctionMutationOperator>());
+//  mutationOperators.emplace_back(make_unique<NegateConditionMutationOperator>());
+//  mutationOperators.emplace_back(make_unique<RemoveVoidFunctionMutationOperator>());
 }
 
 /// The algorithm is the following:

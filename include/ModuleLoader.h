@@ -17,6 +17,10 @@ public:
   ModuleLoader(llvm::LLVMContext &C) : Ctx(C) {}
   virtual std::unique_ptr<MullModule> loadModuleAtPath(const std::string &path);
   virtual ~ModuleLoader() {}
+
+  llvm::LLVMContext &getContext() {
+    return Ctx;
+  };
 };
 
 }

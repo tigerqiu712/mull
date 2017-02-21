@@ -59,8 +59,14 @@ ExecutionResult RustTestRunner::runTest(Test *Test, ObjectFiles &objectFiles) {
 
   auto start = high_resolution_clock::now();
 
-  std::string rustTestFunctionName = std::string("_") + rustTest->getTestName();
+  void *mainPointer = FunctionPointer("_main");
+  auto mainFunction = ((int (*)())(intptr_t)mainPointer);
 
+  mainFunction();
+
+  mainWasRun = true;
+
+  std::string rustTestFunctionName = std::string("_") + rustTest->getTestName();
   void *rustTestPointer = FunctionPointer(rustTestFunctionName.c_str());
 
   // Normally Rust tests are run via `main` function which calls
