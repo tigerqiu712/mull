@@ -96,9 +96,11 @@ std::unique_ptr<Result> Driver::Run() {
       << test->getTestName()
       << "\n";
 
+    printf("before running\n");
     ExecutionResult ExecResult = Sandbox->run([&](ExecutionResult *SharedResult) {
       *SharedResult = Runner.runTest(test.get(), ObjectFiles);
     }, Cfg.getTimeout());
+    printf("after running\n");
 
     auto BorrowedTest = test.get();
     auto Result = make_unique<TestResult>(ExecResult, std::move(test));

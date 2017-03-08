@@ -185,3 +185,13 @@ std::unique_ptr<Module> TestModuleFactory::rustModule() {
 
   return module;
 }
+
+std::unique_ptr<Module> TestModuleFactory::XCTestModule() {
+  std::string contents = createFixture("fixture_swift.ll");
+
+  auto module = parseIR(contents.c_str());
+
+  module->setModuleIdentifier("swift");
+
+  return module;
+}

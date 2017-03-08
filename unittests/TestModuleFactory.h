@@ -39,5 +39,6 @@ public:
 
 #pragma mark - Rust
   std::unique_ptr<Module> rustModule();
+  std::unique_ptr<Module> XCTestModule();
 
 };
