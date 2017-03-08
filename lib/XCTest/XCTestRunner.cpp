@@ -94,8 +94,9 @@ ExecutionResult XCTestRunner::runTest(Test *Test, ObjectFiles &objectFiles) {
   auto start = high_resolution_clock::now();
 
   printf("HELLO111111\n");
+  std::string testFunctionName = std::string("_") + concreteTest->getTestName();
 
-  void *mainPointer = FunctionPointer("_main");
+  void *mainPointer = FunctionPointer(testFunctionName.c_str());
 
   auto main = ((int (*)(int, const char **))(intptr_t)mainPointer);
   const int argc = 1;
