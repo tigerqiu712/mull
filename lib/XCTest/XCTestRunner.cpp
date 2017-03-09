@@ -97,11 +97,10 @@ ExecutionResult XCTestRunner::runTest(Test *Test, ObjectFiles &objectFiles) {
   std::string testFunctionName = std::string("_") + concreteTest->getTestName();
 
   void *mainPointer = FunctionPointer(testFunctionName.c_str());
+  assert(mainPointer);
 
-  auto main = ((int (*)(int, const char **))(intptr_t)mainPointer);
-  const int argc = 1;
-  const char *argv[] = { "mull", NULL };
-  auto res = main(argc, argv);
+  auto main = ((void (*)(void))(intptr_t)mainPointer);
+  main();
 
   auto elapsed = high_resolution_clock::now() - start;
 

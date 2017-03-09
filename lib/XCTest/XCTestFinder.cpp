@@ -49,7 +49,7 @@ std::vector<std::unique_ptr<Test>> XCTestFinder::findTests(Context &Ctx) {
       Logger::info() << "SimpleTestFinder::findTests - looking at function "
         << Fn.getName() << '\n';
 
-      if (Fn.getName().find("test") != std::string::npos) {
+      if (Fn.getName().find("testFoo") != std::string::npos) {
 
         Logger::info() << "SimpleTestFinder::findTests - found function "
         << Fn.getName() << '\n';
