@@ -169,7 +169,9 @@ std::vector<std::unique_ptr<Test>> GoogleTestFinder::findTests(Context &Ctx) {
       auto Store = dyn_cast<StoreInst>(StoreInstUser);
       auto ValueOp = Store->getValueOperand();
 
-      auto callSite = CallSite(ValueOp);
+      // Bitcode compiled from older and newer versions of Google Test can have
+      // both CallInst and InvokeInst instructions.
+      CallSite callSite(ValueOp);
       assert((callSite.isCall() || callSite.isInvoke()) &&
              "Store should be using call to MakeAndRegisterTestInfo");
 
@@ -183,6 +185,12 @@ std::vector<std::unique_ptr<Test>> GoogleTestFinder::findTests(Context &Ctx) {
       assert(TestSuiteNameConstRef);
 
       auto TestCaseNameConstRef = dyn_cast<ConstantExpr>(callSite->getOperand(1));
+=======
+      auto TestSuiteNameConstRef = dyn_cast<ConstantExpr>(callSite.getArgOperand(0));
+      assert(TestSuiteNameConstRef);
+
+      auto TestCaseNameConstRef = dyn_cast<ConstantExpr>(callSite.getArgOperand(1));
+>>>>>>> GoogleTestFinder: use CallSite (CallInst + InvokeInst).
       assert(TestCaseNameConstRef);
 
       ///   @.str = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
