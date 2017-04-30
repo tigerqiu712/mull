@@ -42,6 +42,10 @@ public:
         if (location->getFilename().str().find("include/c++/v1") != std::string::npos) {
           return true;
         }
+
+        if (location->getFilename().str().find("include/llvm") != std::string::npos) {
+          return true;
+        }
       }
     }
 
@@ -180,17 +184,10 @@ std::vector<std::unique_ptr<Test>> GoogleTestFinder::findTests(Context &Ctx) {
       ///
       ///   i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0)
       ///   i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str1, i32 0, i32 0)
-
-      auto TestSuiteNameConstRef = dyn_cast<ConstantExpr>(callSite->getOperand(0));
-      assert(TestSuiteNameConstRef);
-
-      auto TestCaseNameConstRef = dyn_cast<ConstantExpr>(callSite->getOperand(1));
-=======
       auto TestSuiteNameConstRef = dyn_cast<ConstantExpr>(callSite.getArgOperand(0));
       assert(TestSuiteNameConstRef);
 
       auto TestCaseNameConstRef = dyn_cast<ConstantExpr>(callSite.getArgOperand(1));
->>>>>>> GoogleTestFinder: use CallSite (CallInst + InvokeInst).
       assert(TestCaseNameConstRef);
 
       ///   @.str = private unnamed_addr constant [6 x i8] c"Hello\00", align 1

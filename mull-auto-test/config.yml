@@ -1,0 +1,4 @@
+bitcode_file_list: /usr/local/mull/mull/tmp/mull_bitcode_files
+max_distance: 1
+fork: true
+

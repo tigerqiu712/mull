@@ -38,7 +38,7 @@ build_xcode: ## Build Xcode project with CMake.
 	cd $(BUILD_DIR_XCODE) && cmake ../ -G Xcode \
 	  $(CMAKE_COMMAND_LINE_DEBUG_FLAGS) \
 	  -DCMAKE_TOOLCHAIN_FILE=$(MULL_CMAKE_TOOLCHAIN) \
-	  -DMULL_SUPPORT_RUST=1
+	  -DMULL_SUPPORT_RUST=0
 
 rebuild_xcode: build_xcode reopen ## Build Xcode project with CMake, kill Xcode, reopen the project in Xcode
 

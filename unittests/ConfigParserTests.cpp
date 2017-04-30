@@ -17,14 +17,15 @@ TEST_F(ConfigParserTestFixture, loadConfig_bitcodeFileList_nonExistingFile) {
   ASSERT_EQ(errors.size(), 1U);
 }
 
-TEST_F(ConfigParserTestFixture, loadConfig_bitcodeFileList) {
-  static std::string BitcodeFileList = "/tmp/bitcode_file_list.txt";
+TEST_F(ConfigParserTestFixture, loadConfig_bitcodeFileList_specifiedAndValid) {
+  const std::string BitcodeFileList = "/tmp/bitcode_file_list.txt";
 
   std::ofstream fs(BitcodeFileList);
 
   if (!fs) {
     std::cerr << "Cannot open the output file." << std::endl;
     ASSERT_FALSE(true);
+    exit(1);
   }
 
   fs << "foo.bc" << std::endl;

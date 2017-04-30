@@ -1,6 +1,7 @@
 #include "GoogleTest/GoogleTestRunner.h"
 
 #include "GoogleTest/GoogleTest_Test.h"
+#include "Logger.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/OrcMCJITReplacement.h"
@@ -127,8 +128,16 @@ void *GoogleTestRunner::GetCtorPointer(const llvm::Function &Function) {
 
 void *GoogleTestRunner::FunctionPointer(const char *FunctionName) {
   JITSymbol Symbol = ObjectLayer.findSymbol(FunctionName, false);
-  void *FPointer = reinterpret_cast<void *>(static_cast<uintptr_t>(Symbol.getAddress()));
-  assert(FPointer && "Can't find pointer to function");
+
+  void *FPointer =
+    reinterpret_cast<void *>(static_cast<uintptr_t>(Symbol.getAddress()));
+
+  if (FPointer == nullptr) {
+    Logger::error() << "Can't find pointer to function: "
+                    << FunctionName << "\n";
+    exit(1);
+  }
+
   return FPointer;
 }
 
