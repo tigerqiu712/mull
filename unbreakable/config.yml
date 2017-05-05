@@ -1,4 +1,5 @@
 project_name: Unbreakable
 bitcode_file_list: /usr/local/mull/mull/tmp/mull_bitcode_files
-max_distance: 1
+max_distance: 3
 fork: true
+
