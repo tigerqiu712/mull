@@ -256,7 +256,7 @@ TEST(Driver, SimpleTest_RemoveVoidFunctionMutationOperator) {
   ASSERT_NE(nullptr, FirstMutant->getMutationPoint());
 }
 
-TEST(Driver, SimpleTest_AndOrReplacementMutationOperator) {
+TEST(Driver, SimpleTest_ANDORReplacementMutationOperator) {
   std::string projectName = "some_project";
   std::string testFramework = "SimpleTest";
 
@@ -288,7 +288,7 @@ TEST(Driver, SimpleTest_AndOrReplacementMutationOperator) {
   std::function<std::vector<std::unique_ptr<MullModule>> ()> modules = [](){
     std::vector<std::unique_ptr<MullModule>> modules;
 
-    auto module = SharedTestModuleFactory.create_SimpleTest_AndOrReplacement_Module();
+    auto module = SharedTestModuleFactory.create_SimpleTest_ANDORReplacement_Module();
     modules.push_back(make_unique<MullModule>(std::move(module), "1234"));
 
     return modules;
@@ -393,6 +393,69 @@ TEST(Driver, SimpleTest_AndOrReplacementMutationOperator) {
     /// in the second expression.
     auto mutant6_2 = mutants6[1].get();
     ASSERT_EQ(ExecutionStatus::Passed, mutant6_2->getExecutionResult().Status);
+  }
+}
+
+TEST(Driver, SimpleTest_ANDORReplacementMutationOperator_CPP) {
+  std::string projectName = "some_project";
+  std::string testFramework = "SimpleTest";
+
+  bool doFork = false;
+  bool dryRun = false;
+  bool useCache = false;
+  int distance = 10;
+  std::string cacheDirectory = "/tmp/mull_cache";
+
+  Config config("",
+                projectName,
+                testFramework,
+                {},
+                {},
+                {},
+                {},
+                doFork,
+                dryRun,
+                useCache,
+                MullDefaultTimeoutMilliseconds,
+                distance,
+                cacheDirectory);
+
+  std::vector<std::unique_ptr<MutationOperator>> mutationOperators;
+  mutationOperators.emplace_back(make_unique<AndOrReplacementMutationOperator>());
+
+  SimpleTestFinder testFinder(std::move(mutationOperators));
+
+  std::function<std::vector<std::unique_ptr<MullModule>> ()> modules = [](){
+    std::vector<std::unique_ptr<MullModule>> modules;
+
+    auto module = SharedTestModuleFactory.create_SimpleTest_ANDORReplacement_CPPContent_Module();
+    modules.push_back(make_unique<MullModule>(std::move(module), "1234"));
+
+    return modules;
+  };
+
+  LLVMContext context;
+  FakeModuleLoader loader(context, modules);
+
+  Toolchain toolchain(config);
+  SimpleTestRunner runner(toolchain.targetMachine());
+
+  Driver Driver(config, loader, testFinder, runner, toolchain);
+
+  auto result = Driver.Run();
+  ASSERT_EQ(1U, result->getTestResults().size());
+
+  /// Mutation #1: OR operator with 2 branches.
+  {
+    auto result1 = result->getTestResults().begin()->get();
+    ASSERT_EQ(ExecutionStatus::Passed, result1->getOriginalTestResult().Status);
+    ASSERT_EQ("_Z25test_OR_operator_with_CPPv", result1->getTestName());
+
+    auto &mutants1 = result1->getMutationResults();
+    ASSERT_EQ(1U, mutants1.size());
+
+    auto mutant1_1 = mutants1.begin()->get();
+    ASSERT_EQ(ExecutionStatus::Failed, mutant1_1->getExecutionResult().Status);
   }
 }
 

@@ -80,6 +80,19 @@ bool AndOrReplacementMutationOperator::canBeApplied(Value &V) {
     return false;
   }
 
+  /// TODO: Discuss how to filter out irrelevant branch instructions.
+  if (branchInst->hasMetadata()) {
+    int debugInfoKindID = 0;
+
+    MDNode *debug = branchInst->getMetadata(debugInfoKindID);
+    DILocation *location = dyn_cast<DILocation>(debug);
+    if (location) {
+      if (location->getFilename().str().find("include/c++/v1") != std::string::npos) {
+        return false;
+      }
+    }
+  }
+
   AND_OR_MutationType possibleMutationType =
     findPossibleMutationInBranch(branchInst, nullptr);
 
@@ -221,12 +234,13 @@ AndOrReplacementMutationOperator::findPossibleMutationInBranch(BranchInst *branc
   bool passedBranchInst = false;
   for (BasicBlock &bb: *branchInst->getFunction()) {
     for (Instruction &instruction: bb) {
-
-      /// PHINodes have implicit dependencies between themselves and
-      /// basic blocks. For now we just ignore the functions having PHINodes
-      /// completely.
+      /// PHINodes have implicit dependencies between themselves and their
+      /// incoming basic blocks.
+      /// Currently if we don't skip PHINodes Mull's auto-test suites crashes
+      /// on PHINode->getIncomingBlock... function. Looks like some additional
+      /// replacements have to be made when we mutate the branch instruction.
       if (dyn_cast<PHINode>(&instruction)) {
-        return AND_OR_MutationType_None;
+        // return AND_OR_MutationType_None;
       }
 
       BranchInst *candidateBranchInst = dyn_cast<BranchInst>(&instruction);
