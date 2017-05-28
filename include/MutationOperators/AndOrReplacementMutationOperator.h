@@ -26,15 +26,15 @@ namespace mull {
   class AndOrReplacementMutationOperator : public MutationOperator {
 
     AND_OR_MutationType findPossibleMutationInBranch(BranchInst *branchInst,
-                                                     BasicBlock *leftBB,
-                                                     BasicBlock *rightBB);
+                                                     BranchInst **secondBranchInst);
 
-    llvm::Value *applyMutationANDToOR(llvm::Module *M,
-                                      MutationPointAddress address,
-                                      llvm::Value &OriginalValue);
-    llvm::Value *applyMutationORToAND(llvm::Module *M,
-                                      MutationPointAddress address,
-                                      llvm::Value &OriginalValue);
+    llvm::Value *applyMutationANDToOR(Module *M,
+                                      BranchInst *firstBranch,
+                                      BranchInst *secondBranch);
+
+    llvm::Value *applyMutationORToAND(Module *M,
+                                      BranchInst *firstBranch,
+                                      BranchInst *secondBranch);
 
   public:
     static const std::string ID;
