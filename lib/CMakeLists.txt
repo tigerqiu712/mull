@@ -31,6 +31,11 @@ set(mull_sources
   GoogleTest/GoogleTestFinder.cpp
   GoogleTest/GoogleTestRunner.cpp
 
+  CPPUnit/CPPUnit_Test.cpp
+  CPPUnit/CPPUnitMutationOperatorFilter.cpp
+  CPPUnit/CPPUnitFinder.cpp
+  CPPUnit/CPPUnitRunner.cpp
+
   SQLiteReporter.cpp
 )
 
