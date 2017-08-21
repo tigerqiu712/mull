@@ -194,11 +194,17 @@ llvm::Value *AddMutationOperator::applyMutation(Module *M,
   /// TODO: Take care of NUW/NSW
   BinaryOperator *binaryOperator = cast<BinaryOperator>(&I);
 
-  assert(binaryOperator->getOpcode() == Instruction::Add);
+  assert(binaryOperator->getOpcode() == Instruction::Add ||
+    binaryOperator->getOpcode() == Instruction::FAdd);
 
   /// NOTE: Create a new BinaryOperator with the same name as existing one
 
-  Instruction *replacement = BinaryOperator::Create(Instruction::Sub,
+  auto type = Instruction::Sub;
+  if (binaryOperator->getOpcode() == Instruction::FAdd) {
+    type = Instruction::FSub;
+  }
+
+  Instruction *replacement = BinaryOperator::Create(type,
                                                     binaryOperator->getOperand(0),
                                                     binaryOperator->getOperand(1),
                                                     binaryOperator->getName());
