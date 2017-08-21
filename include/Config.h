@@ -27,6 +27,11 @@ struct MappingTraits;
 }
 namespace mull {
 
+struct CustomTest {
+  std::string name;
+  std::string method;
+};
+
 class Config {
   std::string bitcodeFileList;
 
@@ -37,6 +42,7 @@ class Config {
   std::string dynamicLibraryFileList;
   std::vector<std::string> tests;
   std::vector<std::string> excludeLocations;
+  std::vector<CustomTest> customTests;
 
   bool fork;
   bool dryRun;
@@ -67,6 +73,7 @@ public:
     dynamicLibraryFileList(),
     tests(),
     excludeLocations(),
+    customTests(),
     fork(true),
     dryRun(false),
     useCache(true),
@@ -84,6 +91,7 @@ public:
          const std::string &dynamicLibraryFileList,
          const std::vector<std::string> tests,
          const std::vector<std::string> excludeLocations,
+         const std::vector<CustomTest> customTests,
          bool fork,
          bool dryrun,
          bool cache,
@@ -98,6 +106,7 @@ public:
     dynamicLibraryFileList(dynamicLibraryFileList),
     tests(tests),
     excludeLocations(excludeLocations),
+    customTests(customTests),
     fork(fork),
     dryRun(dryrun),
     useCache(cache),
@@ -168,6 +177,14 @@ public:
     return excludeLocations;
   }
 
+  std::vector<CustomTest> &getCustomTests() {
+    return customTests;
+  }
+
+  const std::vector<CustomTest> &getCustomTests() const {
+    return customTests;
+  }
+
   bool getFork() const {
     return fork;
   }
@@ -228,6 +245,14 @@ public:
 
       for (auto excludeLocation : getExcludeLocations()) {
         Logger::debug() << "\t- " << excludeLocation << '\n';
+      }
+    }
+    if (getCustomTests().empty() == false) {
+      Logger::debug() << "\t" << "custom_tests: " << '\n';
+
+      for (auto customTest : getCustomTests()) {
+        Logger::debug() << "\t - name: " << customTest.name << '\n';
+        Logger::debug() << "\t   method: " << customTest.method << '\n';
       }
     }
   }
